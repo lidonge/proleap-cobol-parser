@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import io.proleap.cobol.asg.metamodel.data.datadescription.impl.DataDescriptionEntryImpl;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +137,7 @@ import io.proleap.cobol.asg.metamodel.valuestmt.impl.RelationConditionValueStmtI
 import io.proleap.cobol.asg.util.AsgStringUtils;
 
 public class ProgramUnitElementImpl extends CompilationUnitElementImpl implements ProgramUnitElement {
-
+	public static boolean IGNORE_UNDEFINED_ERROR = false;
 	private static final String HEX_PREFIX = "X\"";
 
 	private final static Logger LOG = LoggerFactory.getLogger(ProgramUnitElementImpl.class);
@@ -570,7 +571,7 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 				}
 			}
 
-			if (validDataDescriptionEntry == null) {
+			if (!IGNORE_UNDEFINED_ERROR && validDataDescriptionEntry == null) {
 				result = createUndefinedCall(ctx);
 			} else {
 				result = createDataDescriptionEntryCall(name, validDataDescriptionEntry, ctx);
@@ -743,6 +744,8 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 				for (final SubscriptContext subscriptContext : ctx.subscript()) {
 					tableCall.addSubscript(subscriptContext);
 				}
+				if(ctx.referenceModifier() != null)
+					tableCall.createReferenceModifier(programUnit,ctx.referenceModifier());
 
 				result = tableCall;
 				registerASGElement(result);
@@ -1342,6 +1345,16 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 		if (localStorageSection != null) {
 			result.addAll(localStorageSection.getDataDescriptionEntries(name));
 		}
+		if(IGNORE_UNDEFINED_ERROR && result.isEmpty()){
+			DataDescriptionEntryImpl fake =
+					new DataDescriptionEntryImpl("Fake", null, program.getCompilationUnit().getProgramUnit(), null) {
+						@Override
+						public DataDescriptionEntryType getDataDescriptionEntryType() {
+							return null;
+						}
+					};
+			result.add(fake) ;
+		}
 
 		return result;
 	}
@@ -1589,7 +1602,8 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 
 	protected void linkDataDescriptionEntryCallWithDataDescriptionEntry(final DataDescriptionEntryCall call,
 			final DataDescriptionEntry dataDescriptionEntry) {
-		dataDescriptionEntry.addCall(call);
+		if( dataDescriptionEntry != null)
+			dataDescriptionEntry.addCall(call);
 	}
 
 	protected void linkFileControlEntryCallWithFileControlEntry(final FileControlEntryCall call,

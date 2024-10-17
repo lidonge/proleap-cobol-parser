@@ -11,6 +11,7 @@ package io.proleap.cobol.asg.metamodel.call.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.proleap.cobol.CobolParser;
 import io.proleap.cobol.CobolParser.SubscriptContext;
 import io.proleap.cobol.CobolParser.TableCallContext;
 import io.proleap.cobol.asg.metamodel.ProgramUnit;
@@ -27,6 +28,7 @@ public class TableCallImpl extends DataDescriptionEntryCallImpl implements Table
 	protected final TableCallContext ctx;
 
 	protected List<Subscript> subscripts = new ArrayList<Subscript>();
+	protected ReferenceModifier referenceModifier;
 
 	public TableCallImpl(final String name, final DataDescriptionEntry dataDescriptionEntry,
 			final ProgramUnit programUnit, final TableCallContext ctx) {
@@ -66,5 +68,17 @@ public class TableCallImpl extends DataDescriptionEntryCallImpl implements Table
 	@Override
 	public List<Subscript> getSubscripts() {
 		return subscripts;
+	}
+
+	@Override
+	public ReferenceModifier createReferenceModifier(ProgramUnit programUnit,
+													 CobolParser.ReferenceModifierContext referenceModifierContext) {
+		this.referenceModifier = new ReferenceModifier(programUnit,referenceModifierContext);
+		return referenceModifier;
+	}
+
+	@Override
+	public ReferenceModifier getReferenceModifier() {
+		return referenceModifier;
 	}
 }

@@ -9,16 +9,21 @@
 package io.proleap.cobol.preprocessor.sub.copybook.impl;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.proleap.cobol.CobolPreprocessorParser.CobolWordContext;
 import io.proleap.cobol.asg.params.CobolParserParams;
 import io.proleap.cobol.asg.util.FilenameUtils;
 import io.proleap.cobol.preprocessor.sub.copybook.CobolWordCopyBookFinder;
+import org.slf4j.LoggerFactory;
 
 public class CobolWordCopyBookFinderImpl implements CobolWordCopyBookFinder {
 
 	@Override
 	public File findCopyBook(final CobolParserParams params, final CobolWordContext ctx) {
+		File ret = null;
+		List<File> allCopybookMatched = new ArrayList<>();
 		if (params.getCopyBookFiles() != null) {
 			for (final File copyBookFile : params.getCopyBookFiles()) {
 				if (isMatchingCopyBook(copyBookFile, params, ctx)) {
@@ -32,12 +37,20 @@ public class CobolWordCopyBookFinderImpl implements CobolWordCopyBookFinder {
 				final File validCopyBook = findCopyBookInDirectory(copyBookDirectory, params, ctx);
 
 				if (validCopyBook != null) {
-					return validCopyBook;
+					if(ret == null)
+						ret = validCopyBook;
+					if(!LoggerFactory.getLogger(CobolWordCopyBookFinderImpl.class).isWarnEnabled())
+						break;
+					allCopybookMatched.add(validCopyBook);
 				}
 			}
 		}
 
-		return null;
+		if(allCopybookMatched.size() > 1){
+			LoggerFactory.getLogger(CobolWordCopyBookFinderImpl.class).warn("Find many matched copybook {}:{}",ret.getName(),allCopybookMatched);
+		}
+
+		return ret;
 	}
 
 	protected File findCopyBookInDirectory(final File copyBooksDirectory, final CobolParserParams params,

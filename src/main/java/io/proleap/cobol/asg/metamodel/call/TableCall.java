@@ -10,7 +10,10 @@ package io.proleap.cobol.asg.metamodel.call;
 
 import java.util.List;
 
+import io.proleap.cobol.CobolParser;
 import io.proleap.cobol.CobolParser.SubscriptContext;
+import io.proleap.cobol.asg.metamodel.ProgramUnit;
+import io.proleap.cobol.asg.metamodel.call.impl.ReferenceModifier;
 import io.proleap.cobol.asg.metamodel.valuestmt.Subscript;
 
 public interface TableCall extends DataDescriptionEntryCall {
@@ -18,4 +21,8 @@ public interface TableCall extends DataDescriptionEntryCall {
 	Subscript addSubscript(SubscriptContext ctx);
 
 	List<Subscript> getSubscripts();
+
+	ReferenceModifier createReferenceModifier(ProgramUnit programUnit,
+											  CobolParser.ReferenceModifierContext referenceModifierContext);
+	ReferenceModifier getReferenceModifier();
 }
