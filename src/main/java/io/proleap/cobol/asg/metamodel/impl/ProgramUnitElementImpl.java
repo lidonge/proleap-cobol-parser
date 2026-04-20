@@ -127,6 +127,8 @@ import io.proleap.cobol.asg.metamodel.valuestmt.IntegerLiteralValueStmt;
 import io.proleap.cobol.asg.metamodel.valuestmt.LiteralValueStmt;
 import io.proleap.cobol.asg.metamodel.valuestmt.RelationConditionValueStmt;
 import io.proleap.cobol.asg.metamodel.valuestmt.ValueStmt;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.Basis;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.PlusMinus;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.ArithmeticValueStmtImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.BooleanLiteralValueStmtImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.CallValueStmtImpl;
@@ -134,6 +136,11 @@ import io.proleap.cobol.asg.metamodel.valuestmt.impl.ConditionValueStmtImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.IntegerLiteralValueStmtImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.LiteralValueStmtImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.impl.RelationConditionValueStmtImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.impl.SyntheticArithmeticValueStmtImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.impl.BasisImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.impl.SyntheticMultDivsImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.impl.SyntheticPlusMinusImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.impl.SyntheticPowersImpl;
 import io.proleap.cobol.asg.util.AsgStringUtils;
 
 public class ProgramUnitElementImpl extends CompilationUnitElementImpl implements ProgramUnitElement {
@@ -1033,6 +1040,80 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 		final IntegerLiteralValueStmt result = new IntegerLiteralValueStmtImpl(programUnit, ctx);
 		result.setIntegerLiteral(integerLiteral);
 		return result;
+	}
+
+	protected ValueStmt createSignedOffsetValueStmt(final ValueStmt baseValueStmt, final IntegerLiteralContext ctx) {
+		final String literalText = ctx == null ? null : ctx.getText();
+		return createSignedOffsetValueStmt(baseValueStmt, literalText);
+	}
+
+	protected ValueStmt createSignedOffsetValueStmt(final ValueStmt baseValueStmt, final String literalText) {
+
+		if (baseValueStmt == null || literalText == null || literalText.isEmpty()) {
+			return null;
+		}
+
+		final char sign = literalText.charAt(0);
+
+		if (sign != '+' && sign != '-') {
+			return null;
+		}
+
+		final BigDecimal absoluteValue = AsgStringUtils.parseBigDecimal(literalText.substring(1));
+		final IntegerLiteral integerLiteral = new IntegerLiteralImpl(absoluteValue, programUnit, null);
+		final IntegerLiteralValueStmt integerLiteralValueStmt = new IntegerLiteralValueStmtImpl(programUnit, null);
+		integerLiteralValueStmt.setIntegerLiteral(integerLiteral);
+
+		final Basis leftBasis = new BasisImpl(programUnit, null);
+		leftBasis.setBasisValueStmt(baseValueStmt);
+
+		final SyntheticPowersImpl leftPowers = new SyntheticPowersImpl(programUnit);
+		leftPowers.setBasis(leftBasis);
+
+		final SyntheticMultDivsImpl leftMultDivs = new SyntheticMultDivsImpl(programUnit);
+		leftMultDivs.setPowers(leftPowers);
+
+		final Basis rightBasis = new BasisImpl(programUnit, null);
+		rightBasis.setBasisValueStmt(integerLiteralValueStmt);
+
+		final SyntheticPowersImpl rightPowers = new SyntheticPowersImpl(programUnit);
+		rightPowers.setBasis(rightBasis);
+
+		final SyntheticMultDivsImpl rightMultDivs = new SyntheticMultDivsImpl(programUnit);
+		rightMultDivs.setPowers(rightPowers);
+
+		final SyntheticPlusMinusImpl plusMinus = new SyntheticPlusMinusImpl(programUnit);
+		plusMinus.setPlusMinusType(sign == '+' ? PlusMinus.PlusMinusType.PLUS : PlusMinus.PlusMinusType.MINUS);
+		plusMinus.setMultDivs(rightMultDivs);
+
+		final SyntheticArithmeticValueStmtImpl arithmeticValueStmt = new SyntheticArithmeticValueStmtImpl(programUnit);
+		arithmeticValueStmt.setMultDivs(leftMultDivs);
+		arithmeticValueStmt.addSyntheticPlusMinus(plusMinus);
+
+		return arithmeticValueStmt;
+	}
+
+	protected ValueStmt createSubscriptValueStmt(final IntegerLiteralContext integerLiteralCtx,
+			final QualifiedDataNameContext qualifiedDataNameCtx, final IndexNameContext indexNameCtx,
+			final ArithmeticExpressionContext arithmeticExpressionCtx) {
+		if (arithmeticExpressionCtx != null) {
+			return createArithmeticValueStmt(arithmeticExpressionCtx);
+		}
+
+		if (integerLiteralCtx != null) {
+			final String literalText = integerLiteralCtx.getText();
+
+			if (literalText != null && !literalText.isEmpty()) {
+				final char sign = literalText.charAt(0);
+
+				if (sign == '+' || sign == '-') {
+					final ValueStmt baseValueStmt = createValueStmt(qualifiedDataNameCtx, indexNameCtx);
+					return createSignedOffsetValueStmt(baseValueStmt, integerLiteralCtx);
+				}
+			}
+		}
+
+		return createValueStmt(integerLiteralCtx, qualifiedDataNameCtx, indexNameCtx);
 	}
 
 	protected Literal createLiteral(final LiteralContext ctx) {

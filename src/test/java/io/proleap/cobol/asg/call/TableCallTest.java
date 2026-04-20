@@ -58,6 +58,7 @@ import io.proleap.cobol.asg.metamodel.valuestmt.Subscript;
 import io.proleap.cobol.asg.metamodel.valuestmt.ValueStmt;
 import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.Basis;
 import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.MultDivs;
+import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.PlusMinus;
 import io.proleap.cobol.asg.metamodel.valuestmt.arithmetic.Powers;
 import io.proleap.cobol.asg.metamodel.valuestmt.condition.CombinableCondition;
 import io.proleap.cobol.asg.metamodel.valuestmt.condition.SimpleCondition;
@@ -482,6 +483,39 @@ public class TableCallTest extends CobolTestBase {
 					}
 				}
 			}
+		}
+	}
+
+	@Test
+	public void testArithmeticSubscript() throws Exception {
+		final File inputFile = new File("src/test/resources/io/proleap/cobol/asg/call/TableCallArithmeticSubscript.cbl");
+		final Program program = new CobolParserRunnerImpl().analyzeFile(inputFile, CobolSourceFormatEnum.TANDEM);
+
+		final CompilationUnit compilationUnit = program.getCompilationUnit("TableCallArithmeticSubscript");
+		final ProgramUnit programUnit = compilationUnit.getProgramUnit();
+		final ProcedureDivision procedureDivision = programUnit.getProcedureDivision();
+		final DisplayStatement displayStatement = (DisplayStatement) procedureDivision.getStatements().get(0);
+		final Operand operand = displayStatement.getOperands().get(0);
+		final CallValueStmt operandCallValueStmt = (CallValueStmt) operand.getOperandValueStmt();
+		final TableCall tableCall = (TableCall) operandCallValueStmt.getCall().unwrap();
+		final Subscript subscript = tableCall.getSubscripts().get(0);
+		final ArithmeticValueStmt arithmeticValueStmt = (ArithmeticValueStmt) subscript.getSubscriptValueStmt();
+
+		{
+			final ValueStmt leftValueStmt = arithmeticValueStmt.getMultDivs().getPowers().getBasis().getBasisValueStmt();
+			final CallValueStmt leftCallValueStmt = (CallValueStmt) leftValueStmt;
+			assertEquals(Call.CallType.INDEX_CALL, leftCallValueStmt.getCall().getCallType());
+		}
+
+		assertEquals(1, arithmeticValueStmt.getPlusMinus().size());
+
+		{
+			final PlusMinus plusMinus = arithmeticValueStmt.getPlusMinus().get(0);
+			assertEquals(PlusMinus.PlusMinusType.MINUS, plusMinus.getPlusMinusType());
+
+			final ValueStmt rightValueStmt = plusMinus.getMultDivs().getPowers().getBasis().getBasisValueStmt();
+			final IntegerLiteralValueStmt integerLiteralValueStmt = (IntegerLiteralValueStmt) rightValueStmt;
+			assertEquals(BigDecimal.ONE, integerLiteralValueStmt.getLiteral().getValue());
 		}
 	}
 }

@@ -43,9 +43,22 @@ public class TableCallImpl extends DataDescriptionEntryCallImpl implements Table
 
 		if (result == null) {
 			result = new SubscriptImpl(programUnit, ctx);
+			final ValueStmt subscriptValueStmt = createSubscriptValueStmt(ctx.integerLiteral(),
+					ctx.qualifiedDataName(), ctx.indexName(), ctx.arithmeticExpression());
+			final String subscriptText = ctx.getText();
 
-			final ValueStmt subscriptValueStmt = createValueStmt(ctx.integerLiteral(), ctx.qualifiedDataName(),
-					ctx.indexName(), ctx.arithmeticExpression());
+			if (!subscripts.isEmpty() && subscriptText != null && !subscriptText.isEmpty()
+					&& (subscriptText.charAt(0) == '+' || subscriptText.charAt(0) == '-')) {
+				final Subscript previousSubscript = subscripts.get(subscripts.size() - 1);
+				final ValueStmt mergedSubscriptValueStmt = createSignedOffsetValueStmt(
+						previousSubscript.getSubscriptValueStmt(), subscriptText);
+				previousSubscript.setSubscriptValueStmt(mergedSubscriptValueStmt);
+				result.setSubscriptValueStmt(mergedSubscriptValueStmt);
+				registerASGElement(result);
+
+				return result;
+			}
+
 			result.setSubscriptValueStmt(subscriptValueStmt);
 
 			subscripts.add(result);
