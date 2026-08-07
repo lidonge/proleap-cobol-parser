@@ -8,8 +8,11 @@
 
 package io.proleap.cobol.asg.metamodel.call;
 
+import java.util.List;
+
 import io.proleap.cobol.asg.metamodel.CobolDivisionElement;
 import io.proleap.cobol.asg.metamodel.NamedElement;
+import io.proleap.cobol.asg.metamodel.valuestmt.Subscript;
 
 public interface Call extends CobolDivisionElement, NamedElement {
 
@@ -20,4 +23,13 @@ public interface Call extends CobolDivisionElement, NamedElement {
 	CallType getCallType();
 
 	Call unwrap();
+
+	default boolean isTableCallSyntax() {
+		return unwrap() instanceof TableCall;
+	}
+
+	default List<Subscript> getStructuredSubscripts() {
+		final Call unwrapped = unwrap();
+		return unwrapped instanceof TableCall tableCall ? tableCall.getSubscripts() : List.of();
+	}
 }

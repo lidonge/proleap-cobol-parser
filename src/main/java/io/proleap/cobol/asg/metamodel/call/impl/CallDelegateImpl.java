@@ -8,11 +8,14 @@
 
 package io.proleap.cobol.asg.metamodel.call.impl;
 
+import java.util.List;
+
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import io.proleap.cobol.asg.metamodel.ProgramUnit;
 import io.proleap.cobol.asg.metamodel.call.Call;
 import io.proleap.cobol.asg.metamodel.impl.CobolDivisionElementImpl;
+import io.proleap.cobol.asg.metamodel.valuestmt.Subscript;
 
 public class CallDelegateImpl extends CobolDivisionElementImpl implements Call {
 
@@ -58,5 +61,15 @@ public class CallDelegateImpl extends CobolDivisionElementImpl implements Call {
 	@Override
 	public Call unwrap() {
 		return delegate.unwrap();
+	}
+
+	@Override
+	public boolean isTableCallSyntax() {
+		return delegate.isTableCallSyntax();
+	}
+
+	@Override
+	public List<Subscript> getStructuredSubscripts() {
+		return delegate.getStructuredSubscripts();
 	}
 }

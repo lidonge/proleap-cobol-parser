@@ -95,6 +95,7 @@ import io.proleap.cobol.asg.metamodel.call.impl.SectionCallImpl;
 import io.proleap.cobol.asg.metamodel.call.impl.SpecialRegisterCallImpl;
 import io.proleap.cobol.asg.metamodel.call.impl.TableCallImpl;
 import io.proleap.cobol.asg.metamodel.call.impl.UndefinedCallImpl;
+import io.proleap.cobol.asg.metamodel.call.impl.UndefinedTableCallImpl;
 import io.proleap.cobol.asg.metamodel.data.DataDivision;
 import io.proleap.cobol.asg.metamodel.data.communication.CommunicationDescriptionEntry;
 import io.proleap.cobol.asg.metamodel.data.communication.CommunicationSection;
@@ -742,7 +743,19 @@ public class ProgramUnitElementImpl extends CompilationUnitElementImpl implement
 			final List<DataDescriptionEntry> dataDescriptionEntries = findDataDescriptionEntries(name);
 
 			if (dataDescriptionEntries.isEmpty()) {
-				result = createUndefinedCall(ctx);
+				if (ctx.subscript().isEmpty() && ctx.referenceModifier() == null) {
+					result = createUndefinedCall(ctx);
+				} else {
+					final TableCall tableCall = new UndefinedTableCallImpl(name, programUnit, ctx);
+					for (final SubscriptContext subscriptContext : ctx.subscript()) {
+						tableCall.addSubscript(subscriptContext);
+					}
+					if (ctx.referenceModifier() != null) {
+						tableCall.createReferenceModifier(programUnit, ctx.referenceModifier());
+					}
+					result = tableCall;
+					registerASGElement(result);
+				}
 			} else {
 				final DataDescriptionEntry dataDescriptionEntry = dataDescriptionEntries.get(0);
 				final TableCall tableCall = new TableCallImpl(name, dataDescriptionEntry, programUnit, ctx);
