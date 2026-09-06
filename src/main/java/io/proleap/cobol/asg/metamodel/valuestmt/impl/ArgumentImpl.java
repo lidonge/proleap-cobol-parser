@@ -12,6 +12,7 @@ import io.proleap.cobol.CobolParser.ArgumentContext;
 import io.proleap.cobol.asg.metamodel.Literal;
 import io.proleap.cobol.asg.metamodel.ProgramUnit;
 import io.proleap.cobol.asg.metamodel.call.Call;
+import io.proleap.cobol.asg.metamodel.call.impl.CallDelegateImpl;
 import io.proleap.cobol.asg.metamodel.impl.CobolDivisionElementImpl;
 import io.proleap.cobol.asg.metamodel.valuestmt.Argument;
 import io.proleap.cobol.asg.metamodel.valuestmt.ArithmeticValueStmt;
@@ -33,6 +34,10 @@ public class ArgumentImpl extends CobolDivisionElementImpl implements Argument {
 
 		if(ctx.identifier() != null){
 			call = createCall(ctx.identifier());
+		}
+
+		if(ctx.tableCall() != null){
+			call = new CallDelegateImpl(createCall(ctx.tableCall()), programUnit, ctx);
 		}
 
 		if(ctx.literal() != null){

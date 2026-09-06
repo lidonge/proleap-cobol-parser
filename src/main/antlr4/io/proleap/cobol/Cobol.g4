@@ -2389,7 +2389,7 @@ subscript
    ;
 
 argument
-   : literal | identifier | qualifiedDataName integerLiteral? | indexName integerLiteral? | arithmeticExpression
+   : literal | tableCall | identifier | qualifiedDataName integerLiteral? | indexName integerLiteral? | arithmeticExpression
    ;
 
 // qualified data name ----------------------------------
